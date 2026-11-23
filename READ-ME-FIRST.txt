@@ -1,0 +1,29 @@
+DigiCre8 Countdown Timer - BUILD THE INSTALLERS ON GITHUB (free)
+
+1. Go to github.com, sign in, click New repository, name it (e.g. digicre8-timer),
+   then Create repository.
+2. Click "uploading an existing file" and drag in EVERYTHING from this folder:
+   index.html, main.js, package.json, the "build" folder and the ".github" folder.
+   (The .github folder is hidden on Mac/Windows. If you cannot see it:
+    - Windows: File Explorer > View > Show > Hidden items
+    - Mac: press Cmd + Shift + .  in Finder
+    OR skip it: in GitHub click Add file > Create new file, type the name
+    .github/workflows/build.yml  and paste the contents of COPY-THIS-build.yml.)
+3. Click Commit changes.
+4. Open the Actions tab. "Build installers" starts by itself (or click it, then Run workflow).
+5. Wait about 5 minutes. Open the finished run and download from "Artifacts":
+     installers-windows-latest  ->  DigiCre8-Timer-Setup-1.0.0.exe   (installer)
+                                    DigiCre8-Timer-Portable-1.0.0.exe (no-install .exe)
+     installers-macos-latest    ->  DigiCre8-Timer-1.0.0-x64.dmg      (Intel Mac)
+                                    DigiCre8-Timer-1.0.0-arm64.dmg    (Apple Silicon Mac)
+                                    ...-Portable-...zip               (no-install Mac app)
+
+First-run warnings (the apps are not paid-signed):
+- Windows SmartScreen: click More info > Run anyway.
+- Mac: right-click the app > Open > Open (first time only).
+
+To build on your own computer instead: install Node.js 20, then run
+  npm install
+  npm run dist
+(Windows gives the .exe files, a Mac gives the .dmg.)
+To change the name or version, edit package.json.

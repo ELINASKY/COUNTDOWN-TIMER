@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Event Countdown Timer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&family=Orbitron:wght@500;800&family=Bebas+Neue&family=Oswald:wght@400;700&family=Roboto+Mono:wght@300;700&family=Share+Tech+Mono&family=Playfair+Display:wght@500;800&family=Montserrat:wght@700;800&family=Poppins:wght@600;700&family=Roboto:wght@500;700&family=Lato:wght@700;900&family=Raleway:wght@700;800&family=Anton&family=Archivo+Black&family=Bungee&family=Audiowide&family=Russo+One&family=Rajdhani:wght@600;700&family=Teko:wght@500;700&family=Exo+2:wght@600;800&family=Press+Start+2P&family=VT323&family=Righteous&family=Monoton&family=Lobster&family=Pacifico&family=Cinzel:wght@600;800&family=Abril+Fatface&family=Staatliches&family=Black+Ops+One&display=swap">
+<style>
+:root{--bg:#000;--fg:#fff;--font:'Inter',sans-serif;--fs:120px;box-sizing:border-box}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+html,body{height:100%;margin:0;color:var(--fg);font-family:var(--font);overflow:hidden}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vh;padding:env(safe-area-inset-top,0) 3vw env(safe-area-inset-bottom,0)}
+#title{font-weight:800;font-size:calc(clamp(28px,6vw,88px)*var(--tm,1));color:var(--tfg,var(--fg));text-align:center;max-width:94vw;outline:none;line-height:1.1;cursor:text;padding:.1em .3em;border-radius:8px}
+#title:focus{box-shadow:0 0 0 2px var(--fg)}
+#time{display:flex;align-items:flex-start;justify-content:center;font-size:var(--fs);line-height:1;font-variant-numeric:tabular-nums;font-weight:700;gap:.04em}
+#time i{font-style:normal;opacity:.6;padding:0 .02em}
+.u{display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.n{display:block}
+.l{display:none;font-size:.13em;letter-spacing:.2em;font-weight:600;opacity:.7;margin-top:.3em}
+.edit .sel .n{box-shadow:0 .05em 0 -.0em currentColor}
+#status{font-size:clamp(12px,1.6vw,20px);letter-spacing:.25em;opacity:.65;font-weight:600}
+#prog{display:none;position:fixed;left:0;bottom:0;height:10px;background:var(--fg);width:0;opacity:.85}
+.flash{animation:bl 1s steps(1) infinite;color:#ff3b30}
+@keyframes bl{50%{opacity:.12}}
+@media(prefers-reduced-motion:reduce){.flash{animation:none}}
+/* templates */
+.tpl-minimal #title{position:absolute;top:calc(6vh + env(safe-area-inset-top,0));font-size:calc(clamp(18px,3vw,38px)*var(--tm,1));letter-spacing:.3em;text-transform:uppercase}
+.tpl-minimal #time{font-weight:300}
+.tpl-boxes #time{gap:.14em;align-items:stretch}
+.tpl-boxes #time i{display:none}
+.tpl-boxes .u{border:3px solid var(--fg);border-radius:.14em;padding:.1em .18em .06em;min-width:1.6em}
+.tpl-boxes .l{display:block}
+.tpl-boxes.edit .sel{background:color-mix(in srgb,var(--fg) 16%,transparent)}
+.tpl-boxes.edit .sel .n{box-shadow:none}
+.tpl-stage #title{position:absolute;top:0;left:0;right:0;max-width:none;border-radius:0;background:var(--tfg,var(--fg));color:var(--bg);padding:.25em .5em;font-size:calc(clamp(26px,5.5vw,80px)*var(--tm,1))}
+.tpl-stage #prog{display:block}
+.tpl-stage #time{font-weight:800;margin-top:6vh}
+/* more templates */
+.tpl-neon #time{font-weight:600;text-shadow:0 0 .08em currentColor,0 0 .25em currentColor,0 0 .6em currentColor}
+.tpl-neon #title{text-shadow:0 0 .15em currentColor,0 0 .5em currentColor}
+.tpl-neon #app::before{content:"";position:absolute;inset:3vh 3vw;border:2px solid var(--fg);border-radius:20px;box-shadow:0 0 14px var(--fg),inset 0 0 14px var(--fg);opacity:.7;pointer-events:none}
+.tpl-flip #time{gap:.12em;align-items:stretch}
+.tpl-flip #time i{display:none}
+.tpl-flip .u{position:relative;background:color-mix(in srgb,var(--fg) 14%,transparent);border-radius:.1em;padding:.06em .14em .04em;min-width:1.5em;overflow:hidden}
+.tpl-flip .u::after{content:"";position:absolute;left:0;right:0;top:44%;height:.02em;min-height:2px;background:var(--bg)}
+.tpl-flip .l{display:block}
+.tpl-left #app{align-items:flex-start;padding-left:4vw;padding-right:4vw}
+.tpl-left #title{text-align:left;padding-left:0}
+.tpl-left #status,.tpl-left #logo{align-self:flex-start}
+.tpl-elegant #title{letter-spacing:.25em;text-transform:uppercase;font-weight:600;border-top:1px solid currentColor;border-bottom:1px solid currentColor;border-radius:0;padding:.5em 1.4em;font-size:calc(clamp(18px,3.4vw,46px)*var(--tm,1))}
+.tpl-elegant #time{font-weight:200}
+.tpl-elegant #time i{opacity:.4}
+.tpl-frame #app::before{content:"";position:absolute;inset:4vh 3vw;border:3px solid var(--fg);border-radius:18px;pointer-events:none}
+.tpl-frame #title{position:absolute;top:4vh;transform:translateY(-55%);background:var(--bg);padding:.1em .6em}
+.tpl-bar #prog{display:block;height:3.5vh;opacity:.9}
+.tpl-bar #app{padding-bottom:4vh}
+/* display styles */
+#time.view-clock{flex-direction:column;align-items:center;gap:.4em}
+.view-clock svg{display:block;max-width:92vw;overflow:visible}
+.view-clock .sub{display:flex;align-items:flex-start;justify-content:center;gap:.04em}
+.view-clock .u,.view-watch .u{border:0;background:none;padding:0;min-width:0}
+.view-clock .u::after,.view-watch .u::after{content:none}
+.view-clock .l,.view-watch .l{display:none}
+#time.view-clock i,#time.view-watch i{display:inline}
+#time.view-watch{display:block;position:relative}
+.view-watch::before,.view-watch::after{content:"";position:absolute;right:-.1em;width:.12em;height:.45em;background:#666;border-radius:.05em}
+.view-watch::before{top:.45em}
+.view-watch::after{bottom:.45em}
+.wbody{position:relative;padding:.2em;border-radius:.42em;background:linear-gradient(145deg,#dde1e6,#7d848c 45%,#c8ccd2);box-shadow:0 .08em .3em rgba(0,0,0,.6),inset 0 0 0 .02em rgba(255,255,255,.5)}
+.wbody::before,.wbody::after{content:"";position:absolute;left:50%;width:62%;height:.8em;transform:translateX(-50%);background:linear-gradient(90deg,#1c1c1c,#444 50%,#1c1c1c);z-index:-1}
+.wbody::before{bottom:calc(100% - .2em);border-radius:.2em .2em 0 0}
+.wbody::after{top:calc(100% - .2em);border-radius:0 0 .2em .2em}
+.wscr{background:#0c120d;border-radius:.3em;padding:.1em .3em .16em;box-shadow:inset 0 .04em .15em #000;min-width:4.4em}
+.wtop{display:flex;justify-content:space-between;font-size:.2em;letter-spacing:.15em;opacity:.7;font-family:'Share Tech Mono',monospace;font-weight:400;margin-bottom:.3em}
+.wrow{display:flex;justify-content:center;align-items:center;gap:calc(.1em*var(--wgap,1));transform:skewX(-6deg)}
+.view-watch .n{display:flex;align-items:center}
+.seg{height:.8em;width:.48em;margin:0 .03em;flex:none;filter:drop-shadow(0 0 calc(.05em*var(--glow,1)) currentColor)}
+.view-watch .wrow i{font-size:0;width:calc(.12em + .1em*var(--wgap,1));height:.8em;position:relative;opacity:1;padding:0;filter:drop-shadow(0 0 calc(.05em*var(--glow,1)) currentColor)}
+.view-watch .wrow i::before,.view-watch .wrow i::after{content:"";position:absolute;left:50%;width:.1em;height:.1em;margin-left:-.05em;background:currentColor;border-radius:50%}
+.view-watch .wrow i::before{top:.24em}
+.view-watch .wrow i::after{top:.52em}
+.view-watch.run .wrow i{animation:cb 1s steps(1) infinite}
+@keyframes cb{50%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.view-watch.run .wrow i{animation:none}}
+.noslant .wrow{transform:none}
+.seg path.off{opacity:.09}
+.noghost .seg path.off{opacity:0}
+.ws-sport .wbody{background:#1a1a1a;border:.07em solid #ff7a00;border-radius:.3em;box-shadow:0 .08em .3em rgba(0,0,0,.6),inset 0 0 0 .03em #444}
+.ws-sport .wbody::before,.ws-sport .wbody::after{background:linear-gradient(90deg,#0d0d0d,#2c2c2c 50%,#0d0d0d)}
+.ws-sport .wscr{background:#000}
+.ws-gold .wbody{background:linear-gradient(145deg,#f7e08a,#b8860b 45%,#f3d675)}
+.ws-gold .wbody::before,.ws-gold .wbody::after{background:linear-gradient(90deg,#2a1608,#5a3a1c 50%,#2a1608)}
+.ws-panel .wbody{background:#000;padding:.14em;border-radius:.12em;border:.03em solid currentColor;box-shadow:0 0 calc(.3em*var(--glow,1)) currentColor,inset 0 0 calc(.3em*var(--glow,1)) color-mix(in srgb,currentColor 35%,transparent)}
+.ws-score .wbody{background:linear-gradient(#2d3138,#15171b);border:.05em solid #666;border-radius:.08em;padding:.14em;box-shadow:0 .1em .4em #000}
+.ws-score .wtop{font-size:.26em;opacity:.95}
+.ws-score .wscr{background:#000;border:.03em solid #444}
+.ws-bare .wbody{background:none;box-shadow:none;padding:0}
+.ws-bare .wscr{background:none;box-shadow:none;padding:0}
+.ws-bare .wtop{display:none}
+.ws-panel .wbody::before,.ws-panel .wbody::after,.ws-score .wbody::before,.ws-score .wbody::after,.ws-bare .wbody::before,.ws-bare .wbody::after{display:none}
+.ws-panel.view-watch::before,.ws-panel.view-watch::after,.ws-score.view-watch::before,.ws-score.view-watch::after,.ws-bare.view-watch::before,.ws-bare.view-watch::after{display:none}
+.noglow .seg,.noglow .wrow i{filter:none}
+.noglow.ws-panel .wbody{box-shadow:none}
+.ledbg .wscr{background:var(--ledbg)}
+.ledbg.ws-panel .wbody{background:var(--ledbg)}
+.ledbg.ws-bare .wscr{padding:.1em .3em .16em}
+/* controls */
+#bar{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0));transform:translateX(-50%);display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:92vw;opacity:.45;transition:opacity .3s}
+#bar:hover,#bar:focus-within{opacity:1}
+#bar.hide{opacity:0;pointer-events:none}
+button{font:inherit;color:#fff;background:#222;border:1px solid #555;border-radius:8px;min-width:40px;height:40px;padding:0 12px;cursor:pointer;font-size:15px}
+button:hover{background:#333}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #4da3ff;outline-offset:2px}
+#dev{position:fixed;right:calc(12px + env(safe-area-inset-right,0));bottom:calc(6px + env(safe-area-inset-bottom,0));font-size:15px;opacity:.65;letter-spacing:.05em;font-weight:600;pointer-events:none}
+#menubtn{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:calc(10px + env(safe-area-inset-left,0px));z-index:5;opacity:.5}
+#menubtn:hover{opacity:1}
+#menu{position:fixed;top:calc(58px + env(safe-area-inset-top,0px));left:calc(10px + env(safe-area-inset-left,0px));display:none;flex-direction:column;gap:2px;background:#151515;border:1px solid #444;border-radius:10px;padding:6px;z-index:6}
+#menu.on{display:flex}
+#menu button{text-align:left;border:0;background:transparent;min-width:190px}
+#menu button:hover{background:#2a2a2a}
+.tpl-stage #title{padding-left:110px;padding-right:110px}
+.ed{font:inherit;font-variant-numeric:tabular-nums;color:inherit;background:transparent;border:0;border-bottom:.04em solid currentColor;text-align:center;outline:none;padding:0;min-width:1.2ch}
+.fs #bar,.fs #menubtn,.fs #menu,.fs #status{display:none!important}
+.fs{cursor:none}
+#pn input[type=checkbox]{width:18px;height:18px}
+#bgi,#bgv{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;display:none}
+#bgd{position:fixed;inset:0;z-index:-1;pointer-events:none}
+#logo{display:none;max-height:calc(var(--lh,12)*1vh);max-width:70vw;object-fit:contain}
+#pn input[type=range]{accent-color:#4da3ff}
+/* panels */
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:9;padding:12px}
+#ov.on{display:flex}
+#pn{background:#151515;color:#eee;font-family:Inter,system-ui,sans-serif;width:min(560px,100%);max-height:88vh;overflow:auto;border-radius:14px;padding:20px 22px;border:1px solid #333}
+#pn h2{margin:0 0 12px;font-size:20px}
+#pn h3{margin:18px 0 8px;font-size:14px;font-weight:600;color:#aaa}
+#pn label{display:block;font-size:13px;color:#aaa;margin:10px 0 4px}
+#pn input[type=text],#pn select{width:100%;height:40px;background:#222;color:#fff;border:1px solid #555;border-radius:8px;padding:0 10px;font:inherit}
+.sw{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sw button{width:34px;min-width:34px;height:34px;padding:0;border-radius:50%;border:2px solid #666}
+.sw input[type=color]{width:44px;height:34px;border:0;background:none;padding:0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #2a2a2a;font-size:14px}
+.row button{height:32px;min-width:96px;font-size:13px}
+kbd{background:#2a2a2a;border:1px solid #555;border-radius:5px;padding:2px 8px;font:600 13px Inter,sans-serif}
+.x{float:right;height:34px}
+p.t{font-size:13px;color:#aaa;line-height:1.5}
+</style>
+</head>
+<body>
+<img id="bgi" alt=""><video id="bgv" muted loop autoplay playsinline></video><div id="bgd"></div>
+<div id="app">
+  <img id="logo" alt="Logo">
+  <div id="title" contenteditable="true" spellcheck="false" aria-label="Event title"></div>
+  <div id="time"></div>
+  <div id="status"></div>
+</div>
+<div id="prog"></div>
+<div id="bar">
+  <button onclick="act('left')" title="Previous unit" aria-label="Previous unit">◀</button>
+  <button onclick="act('up')" title="Increase" aria-label="Increase">▲</button>
+  <button onclick="act('down')" title="Decrease" aria-label="Decrease">▼</button>
+  <button onclick="act('right')" title="Next unit" aria-label="Next unit">▶</button>
+  <button id="bgo" onclick="act('toggle')" style="min-width:84px">Start</button>
+  <button onclick="act('reset')">Reset</button>
+</div>
+<button id="menubtn" onclick="tgMenu(!$('menu').classList.contains('on'))" aria-label="Menu">☰ Menu</button>
+<div id="menu">
+  <button onclick="act('full')">Full screen</button>
+  <button onclick="act('settings');tgMenu(false)">Settings</button>
+  <button onclick="act('help');tgMenu(false)">Help and keys</button>
+  <button id="bmode" onclick="act('mode');tgMenu(false)">Direction</button>
+  <button id="bview" onclick="act('view');tgMenu(false)">Display style</button>
+</div>
+<div id="dev"></div>
+<div id="ov"><div id="pn" role="dialog"></div></div>
+
+<script>
+const ACTS=[['up','Increase selected value','ArrowUp'],['down','Decrease selected value','ArrowDown'],['left','Select previous unit','ArrowLeft'],['right','Select next unit','ArrowRight'],['toggle','Start / pause','Space'],['reset','Reset to 10 minutes','Delete'],['mode','Switch count down / count up','KeyM'],['full','Full screen on / off','KeyF'],['help','Open help','KeyH'],['settings','Open settings','KeyS'],['view','Switch timer / clock / watch','KeyV']];
+const FONTS=[['Inter','sans-serif'],['Orbitron','sans-serif'],['Bebas Neue','sans-serif'],['Oswald','sans-serif'],['Roboto Mono','monospace'],['Share Tech Mono','monospace'],['Playfair Display','serif'],['Montserrat','sans-serif'],['Poppins','sans-serif'],['Roboto','sans-serif'],['Lato','sans-serif'],['Raleway','sans-serif'],['Anton','sans-serif'],['Archivo Black','sans-serif'],['Bungee','sans-serif'],['Audiowide','sans-serif'],['Russo One','sans-serif'],['Rajdhani','sans-serif'],['Teko','sans-serif'],['Exo 2','sans-serif'],['Press Start 2P','monospace'],['VT323','monospace'],['Righteous','sans-serif'],['Monoton','sans-serif'],['Lobster','cursive'],['Pacifico','cursive'],['Cinzel','serif'],['Abril Fatface','serif'],['Staatliches','sans-serif'],['Black Ops One','sans-serif'],['Arial','sans-serif'],['Georgia','serif'],['Courier New','monospace'],['Impact','sans-serif'],['Verdana','sans-serif']];
+const TPLS=[['classic','Classic'],['minimal','Minimal'],['boxes','Digital boxes'],['stage','Stage banner'],['neon','Neon glow'],['flip','Flip cards'],['left','Left aligned'],['elegant','Elegant'],['frame','Framed'],['bar','Progress bar']];
+const BGS=['#000000','#0b1e3f','#5a0a14','#0d3b24','#3a1458','#ffffff'];
+const LEDBGS=['#000000','#0c120d','#1a0000','#001a33','#2a2a2a','#ffffff'];
+const FGS=['#ffffff','#ffd60a','#30d158','#64d2ff','#ff453a','#000000'];
+const DEV='DigiCre8 Studios';
+const DEF={title:'Event Title',units:{h:true,m:true,s:true},bg:'#000000',size:100,shadow:'none',shadowC:'#000000',stroke:0,strokeC:'#000000',tfont:'',tfg:'',tsize:100,tbold:true,tshadow:'none',tshadowC:'#000000',tstroke:0,tstrokeC:'#000000',logoOn:false,logo:'',logoH:12,bgType:'color',bgImg:'',dim:30,local:[],view:'digits',wstyle:'panel',wslant:true,wghost:true,cstyle:'classic',glow:50,wgap:100,ledbg:'',fg:'#ffffff',font:'Inter',tpl:'classic',mode:'down',total:600,keys:{}};
+ACTS.forEach(a=>DEF.keys[a[0]]=a[2]);
+let S=JSON.parse(JSON.stringify(DEF));
+try{const d=JSON.parse(localStorage.getItem('evtimer')||'null');if(d){S={...S,...d,keys:{...S.keys,...(d.keys||{})}}}}catch(e){}
+S.bgImg='';S.bgType='color';
+const save=()=>{const{bgImg,bgType,...r}=S;try{localStorage.setItem('evtimer',JSON.stringify(r))}catch(e){try{const{logo,...q}=r;localStorage.setItem('evtimer',JSON.stringify(q))}catch(x){}}};
+let run=false,el=0,t0=0,sel=1,done=false,listen=null,panel=null,fsOn=false;
+const visUnits=()=>{const u=[0,1,2].filter(i=>S.units['hms'[i]]);return u.length?u:[2]};
+function split(sec){const vis=visUnits();let rem=sec;const o=[];[3600,60,1].forEach((d,i)=>{if(!vis.includes(i))return;const q=Math.floor(rem/d);rem-=q*d;o.push([i,q])});return o}
+const curSec=()=>S.mode==='down'?Math.max(0,Math.ceil((S.total*1000-el)/1000)):S.total+Math.floor(el/1000);
+function setU(k,v){S.units[k]=v;if(!['h','m','s'].some(x=>S.units[x]))S.units[k]=true;save();render();openPanel('set',true)}
+function tgMenu(b){$('menu').classList.toggle('on',b)}
+function enterFS(){fsOn=true;tgMenu(false);try{const e=document.documentElement,r=(e.requestFullscreen||e.webkitRequestFullscreen||(()=>{})).call(e);if(r&&r.catch)r.catch(()=>{})}catch(x){}render()}
+function exitFS(){fsOn=false;try{const d=document;if(d.fullscreenElement||d.webkitFullscreenElement)(d.exitFullscreen||d.webkitExitFullscreen).call(d)}catch(x){}render()}
+const $=id=>document.getElementById(id);
+const kn=c=>({ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:'←',ArrowRight:'→',Space:'Space'}[c]||c.replace(/^Key|^Digit/,''));
+
+let vidURL='';
+const fam=n=>{const f=FONTS.find(x=>x[0]===n);return `'${String(n).replace(/'/g,'')}',${f?f[1]:'sans-serif'}`};
+const cwOf=n=>({'Orbitron':.82,'Audiowide':.8,'Press Start 2P':1,'Monoton':.8,'Bungee':.78,'Russo One':.7,'Black Ops One':.75,'Archivo Black':.72,'Bebas Neue':.5,'Oswald':.5,'Anton':.5,'Teko':.48,'Staatliches':.5,'Rajdhani':.52,'VT323':.45}[n]||.62);
+const shCss=(k,c)=>k==='soft'?`0 .05em .12em ${c}`:k==='glow'?`0 0 .2em ${c},0 0 .5em ${c}`:k==='hard'?`.06em .06em 0 ${c}`:'none';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fopts=(cur,same)=>(same?`<option value="" ${!cur?'selected':''}>Same as timer</option>`:'')+`<optgroup label="Built-in">`+FONTS.map(f=>`<option ${cur===f[0]?'selected':''}>${f[0]}</option>`).join('')+`</optgroup>`+(S.local.length?`<optgroup label="Installed on this computer">`+S.local.map(n=>`<option ${cur===n?'selected':''}>${esc(n)}</option>`).join('')+`</optgroup>`:'');
+const rng=(k,mn,mx,lab,u)=>`<label>${lab}: <b>${S[k]}${u}</b></label><input type="range" min="${mn}" max="${mx}" value="${S[k]}" oninput="S['${k}']=+this.value;save();apply();this.previousElementSibling.querySelector('b').textContent=this.value+'${u}'" style="width:100%">`;
+const shSel=k=>`<select onchange="set('${k}',this.value)">${['none','soft','glow','hard'].map(o=>`<option ${S[k]===o?'selected':''}>${o}</option>`).join('')}</select>`;
+const col=(k,lab)=>`<label>${lab}</label><input type="color" value="${S[k]||'#ffffff'}" oninput="set('${k}',this.value)" style="width:60px;height:34px;border:0;background:none;padding:0">`;
+function applyFx(){
+  const st=(e,sh,shc,sw,sc)=>{e.style.textShadow=sh==='none'?'':shCss(sh,shc);e.style.webkitTextStroke=sw>0?sw+'px '+sc:'';e.style.paintOrder='stroke fill'};
+  st($('time'),S.shadow,S.shadowC,S.stroke,S.strokeC);
+  st($('title'),S.tshadow,S.tshadowC,S.tstroke,S.tstrokeC);
+  const r=document.documentElement.style;
+  S.tfg?r.setProperty('--tfg',S.tfg):r.removeProperty('--tfg');
+  r.setProperty('--tm',S.tsize/100);r.setProperty('--lh',S.logoH);r.setProperty('--glow',S.glow/50);r.setProperty('--wgap',S.wgap/100);S.ledbg?r.setProperty('--ledbg',S.ledbg):r.removeProperty('--ledbg');
+  const T=$('title');T.style.fontFamily=S.tfont?fam(S.tfont):'';T.style.fontWeight=S.tbold?800:400;
+  const lg=$('logo');lg.style.display=S.logoOn&&S.logo?'block':'none';if(S.logo&&lg.getAttribute('src')!==S.logo)lg.src=S.logo;
+  const bi=$('bgi'),bv=$('bgv'),mi=S.bgType==='image'&&S.bgImg,mv=S.bgType==='video'&&vidURL;
+  bi.style.display=mi?'block':'none';if(mi&&bi.getAttribute('src')!==S.bgImg)bi.src=S.bgImg;
+  bv.style.display=mv?'block':'none';if(mv&&bv.paused)bv.play().catch(()=>{});
+  $('bgd').style.background=`rgba(0,0,0,${(mi||mv)?S.dim/100:0})`;
+}
+function imgData(f,max,type,cb){const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{try{const w0=im.naturalWidth||max,h0=im.naturalHeight||max,sc=Math.min(1,max/Math.max(w0,h0));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w0*sc));c.height=Math.max(1,Math.round(h0*sc));c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL(type,.85))}catch(e){cb(r.result)}};im.onerror=()=>cb(r.result);im.src=r.result};r.readAsDataURL(f)}
+function upLogo(f){if(f)imgData(f,700,'image/png',d=>{S.logo=d;S.logoOn=true;save();apply();openPanel('set',true)})}
+function upBg(f){if(f)imgData(f,1920,'image/jpeg',d=>{S.bgImg=d;S.bgType='image';save();apply();openPanel('set',true)})}
+function upVideo(f){if(!f)return;const v=$('bgv');v.loop=true;v.onended=()=>{v.currentTime=0;v.play().catch(()=>{})};if(vidURL.startsWith('blob:'))URL.revokeObjectURL(vidURL);vidURL=URL.createObjectURL(f);let tried=false;v.onerror=()=>{if(tried)return;tried=true;const r=new FileReader();r.onload=()=>{vidURL=r.result;v.src=vidURL;v.play().catch(()=>{})};r.readAsDataURL(f)};v.src=vidURL;v.play().catch(()=>{});S.bgType='video';save();apply();openPanel('set',true)}
+async function loadLocal(){try{const l=await window.queryLocalFonts();S.local=[...new Set(l.map(f=>f.family))].sort();save();openPanel('set',true);$('fmsg').textContent=S.local.length+' installed fonts added to the font lists.'}catch(e){$('fmsg').textContent='This browser can’t list installed fonts. Type a font name below instead.'}}
+function addFont(n){n=(n||'').trim().replace(/['"]/g,'');if(!n)return;S.local=[...new Set([...S.local,n])];S.font=n;save();apply();openPanel('set',true)}
+const SEGP={a:'M10 5L15 0H45L50 5L45 10H15Z',b:'M55 7L60 12V43L55 48L50 43V12Z',c:'M55 52L60 57V88L55 93L50 88V57Z',d:'M10 95L15 90H45L50 95L45 100H15Z',e:'M5 52L10 57V88L5 93L0 88V57Z',f:'M5 7L10 12V43L5 48L0 43V12Z',g:'M10 50L15 45H45L50 50L45 55H15Z'};
+const SEGON={'0':'abcdef','1':'bc','2':'abdeg','3':'abcdg','4':'bcfg','5':'acdfg','6':'acdefg','7':'abc','8':'abcdefg','9':'abcdfg'};
+const led=s=>[...String(s)].map(ch=>{const on=SEGON[ch]||'';return `<svg class="seg" viewBox="0 0 60 100" aria-hidden="true">${Object.keys(SEGP).map(k=>`<path d="${SEGP[k]}" fill="currentColor" class="${on.includes(k)?'':'off'}"/>`).join('')}</svg>`}).join('');
+const WST=[['panel','LED panel'],['classic','Silver watch'],['sport','Sport watch'],['gold','Gold watch'],['score','Scoreboard'],['bare','Bare LED digits']];
+const CSTN=[['classic','Classic'],['modern','Modern'],['roman','Roman numerals'],['station','Station (bold)'],['inverted','Solid face'],['minimal','Minimal dots'],['neon','Neon glow']];
+const CST={classic:{num:'arabic',tick:'full',face:'ring'},modern:{num:'none',tick:'hours',face:'ring',thin:1},roman:{num:'roman',tick:'full',face:'ring'},station:{num:'arabic',tick:'full',face:'ring',bold:1},inverted:{num:'arabic',tick:'full',face:'filled'},minimal:{num:'four',tick:'dots',face:'none',thin:1},neon:{num:'arabic',tick:'full',face:'ring',glow:1}};
+function clockSvg2(sec,vis){
+  const c=CST[S.cstyle]||CST.classic,fill=c.face==='filled',bw=c.bold?1.6:1,hw=c.thin?.65:c.bold?1.3:1;
+  const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;
+  let t='',nums='';
+  if(c.tick!=='none')for(let i=0;i<60;i++){
+    const big=i%5===0;
+    if(c.tick==='hours'&&!big)continue;
+    if(c.tick==='dots'){t+=`<circle cx="100" cy="13" r="${big?3.6:1.4}" fill="currentColor" opacity="${big?1:.6}" transform="rotate(${i*6} 100 100)"/>`;continue}
+    t+=`<line x1="100" y1="${big?10:13}" x2="100" y2="${big?22:17}" stroke="currentColor" stroke-width="${(big?3.5:1.2)*bw}" opacity="${big?1:.55}" transform="rotate(${i*6} 100 100)"/>`;
+  }
+  if(c.num!=='none'){
+    const R=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+    for(let i=1;i<=12;i++){
+      if(c.num==='four'&&i%3)continue;
+      const a=i*Math.PI/6,txt=c.num==='roman'?R[i-1]:i;
+      nums+=`<text x="${100+Math.sin(a)*70}" y="${100-Math.cos(a)*70}" text-anchor="middle" dominant-baseline="central" font-size="${c.num==='roman'?14:17}" font-weight="700" fill="currentColor" style="font-family:var(--font)">${txt}</text>`;
+    }
+  }
+  const hand=(i,ang,len,w,col)=>vis.includes(i)?`<line x1="100" y1="${100+len*.18}" x2="100" y2="${100-len}" stroke="${!run&&sel===i?'#4da3ff':col}" stroke-width="${w}" stroke-linecap="round" transform="rotate(${ang} 100 100)"/>`:'';
+  const face=c.face==='ring'?`<circle cx="100" cy="100" r="96" fill="none" stroke="currentColor" stroke-width="${4*bw}"/>`:fill?`<circle cx="100" cy="100" r="98" fill="currentColor"/>`:'';
+  const hands=hand(0,(h%12)*30+m*.5,48,7*hw,'currentColor')+hand(1,m*6+s*.1,70,5*hw,'currentColor')+hand(2,s*6,78,2.5*Math.min(hw,1),'#ff3b30')+`<circle cx="100" cy="100" r="${c.thin?4:6}" fill="currentColor"/>`;
+  return `<svg viewBox="0 0 200 200" role="img" aria-label="Clock face"${c.glow?' style="filter:drop-shadow(0 0 3px currentColor) drop-shadow(0 0 9px currentColor)"':''}>${face}<g${fill?' style="color:var(--bg)"':''}>${t}${nums}${hands}</g></svg>`;
+}
+function clockSvg(sec,vis){
+  const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;
+  let t='',nums='';
+  for(let i=0;i<60;i++){const big=i%5===0;t+=`<line x1="100" y1="${big?10:13}" x2="100" y2="${big?22:17}" stroke="currentColor" stroke-width="${big?3.5:1.2}" opacity="${big?1:.55}" transform="rotate(${i*6} 100 100)"/>`}
+  for(let i=1;i<=12;i++){const a=i*Math.PI/6;nums+=`<text x="${100+Math.sin(a)*70}" y="${100-Math.cos(a)*70}" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="700" fill="currentColor" style="font-family:var(--font)">${i}</text>`}
+  const hand=(i,ang,len,w,col)=>vis.includes(i)?`<line x1="100" y1="${100+len*.18}" x2="100" y2="${100-len}" stroke="${!run&&sel===i?'#4da3ff':col}" stroke-width="${w}" stroke-linecap="round" transform="rotate(${ang} 100 100)"/>`:'';
+  return `<svg viewBox="0 0 200 200" role="img" aria-label="Clock face"><circle cx="100" cy="100" r="96" fill="none" stroke="currentColor" stroke-width="4"/>${t}${nums}${hand(0,(h%12)*30+m*.5,48,7,'currentColor')}${hand(1,m*6+s*.1,70,5,'currentColor')}${hand(2,s*6,78,2.5,'#ff3b30')}<circle cx="100" cy="100" r="6" fill="currentColor"/></svg>`;
+}
+function render(){
+  const sec=S.mode==='down'?Math.max(0,Math.ceil((S.total*1000-el)/1000)):S.total+Math.floor(el/1000);
+  const vis=visUnits();if(!vis.includes(sel))sel=vis[0];
+  const parts=split(sec).map(p=>[p[0],String(p[1]).padStart(2,'0')]);
+  const row=parts.map(([i,x])=>`<div class="u ${i===sel?'sel':''}" data-i="${i}"><span class="n" data-v="${x}">${S.view==='watch'?led(x):x}</span><span class="l">${['HOURS','MINUTES','SECONDS'][i]}</span></div>`).join('<i>:</i>');
+  const V=S.view;
+  $('time').innerHTML=V==='clock'?clockSvg2(sec,vis)+`<div class="sub">${row}</div>`:V==='watch'?`<div class="wbody"><div class="wscr"><div class="wtop"><span>${S.mode==='down'?'TIMER ▼':'TIMER ▲'}</span><span>${run?'RUN':done?'END':'STOP'}</span></div><div class="wrow">${row}</div></div></div>`:row;
+  $('time').className=(run?'run':'edit')+(done?' flash':'')+' view-'+V+(V==='watch'?' ws-'+S.wstyle+(S.wslant?'':' noslant')+(S.wghost?'':' noghost')+(S.glow?'':' noglow')+(S.ledbg?' ledbg':''):'');
+  document.body.className='tpl-'+S.tpl+(run?'':' edit')+(fsOn?' fs':'');
+  const cw=cwOf(S.font);
+  const n=parts.length,len=parts.reduce((a,p)=>a+p[1].length,0),boxes=['boxes','flip'].includes(S.tpl);
+  let fs=Math.min(innerWidth*.92/(len*cw+(n-1)*(boxes?.4:.35)+(boxes?n*.5:.1)),innerHeight*(S.tpl==='stage'?.46:.36)*(n===1?1.3:1))*S.size/100;
+  if(V==='clock'){const cp=Math.min(innerWidth*.8,innerHeight*.5)*S.size/100;fs=cp*.16;const sv=$('time').querySelector('svg');sv.style.width=sv.style.height=cp+'px'}
+  else if(V==='watch')fs=Math.min(innerWidth*.86/(len*.56+(n-1)*(.12+.3*S.wgap/100)+1.6),innerHeight*.34)*S.size/100;
+  document.documentElement.style.setProperty('--fs',Math.max(24,fs)+'px');
+  $('status').textContent=(S.mode==='down'?'COUNTING DOWN':'COUNTING UP')+' · '+(run?'RUNNING':done?'TIME UP':el>0?'PAUSED':'READY');
+  $('bgo').textContent=run?'Pause':'Start';
+  $('bmode').textContent='Direction: '+(S.mode==='down'?'Count down':'Count up');
+  $('bview').textContent='Display: '+{digits:'Timer',clock:'Analog clock',watch:'Digital watch'}[S.view];
+  const pr=S.mode==='down'?(S.total?el/(S.total*1000):0):(el/1000%60)/60;
+  $('prog').style.width=Math.min(100,pr*100)+'%';
+}
+function apply(){
+  const r=document.documentElement.style;
+  r.setProperty('--bg',S.bg);r.setProperty('--fg',S.fg);
+  r.setProperty('--font',fam(S.font));
+  if(document.activeElement!==$('title'))$('title').textContent=S.title;
+  $('dev').textContent=DEV;applyFx();
+  render();
+}
+function adjust(d,big){
+  const step=[3600,60,1][sel]*(big?10:1);
+  S.total=Math.min(99999*3600,Math.max(0,S.total+d*step));
+  if(S.mode==='down'&&el>S.total*1000){el=S.total*1000}
+  done=false;save();render();
+}
+function act(id,big){
+  switch(id){
+    case'up':adjust(1,big);break;
+    case'down':adjust(-1,big);break;
+    case'left':{const v=visUnits(),k=v.indexOf(sel);sel=v[(k+v.length-1)%v.length];render();break}
+    case'right':{const v=visUnits(),k=v.indexOf(sel);sel=v[(k+1)%v.length];render();break}
+    case'toggle':
+      if(run){run=false}else{
+        if(S.mode==='down'&&el>=S.total*1000){el=0;done=false}
+        if(S.mode==='down'&&S.total===0)break;
+        t0=Date.now()-el;run=true;
+      }render();break;
+    case'reset':run=false;el=0;done=false;S.total=600;save();render();break;
+    case'mode':S.mode=S.mode==='down'?'up':'down';run=false;el=0;done=false;save();render();if(panel==='set')openPanel('set');break;
+    case'view':S.view={digits:'clock',clock:'watch'}[S.view]||'digits';save();apply();if(panel==='set')openPanel('set',true);break;
+    case'full':fsOn?exitFS():enterFS();break;
+    case'help':if(fsOn)exitFS();panel==='help'?closePanel():openPanel('help');break;
+    case'settings':if(fsOn)exitFS();panel==='set'?closePanel():openPanel('set');break;
+  }
+}
+setInterval(()=>{
+  if(!run)return;
+  el=Date.now()-t0;
+  if(S.mode==='down'&&el>=S.total*1000){el=S.total*1000;run=false;done=true}
+  render();
+},100);
+
+/* keyboard */
+addEventListener('keydown',e=>{
+  if(listen){
+    e.preventDefault();
+    if(e.code!=='Escape'){
+      const old=S.keys[listen];
+      for(const k in S.keys)if(S.keys[k]===e.code)S.keys[k]=old;
+      S.keys[listen]=e.code;save();
+    }
+    listen=null;openPanel('set',true);return;
+  }
+  const t=e.target;
+  if(t.matches&&t.matches('input,select,textarea,[contenteditable]')){
+    if(e.key==='Escape'||(e.key==='Enter'&&t.id==='title')){e.preventDefault();t.blur()}
+    return;
+  }
+  if(e.key==='Escape'&&fsOn){exitFS();return}
+  if(e.key==='Escape'&&panel){closePanel();return}
+  let id=Object.keys(S.keys).find(k=>S.keys[k]===e.code);
+  if(!id&&e.code==='Backspace'&&S.keys.reset==='Delete')id='reset';
+  if(!id)return;
+  e.preventDefault();
+  act(id,e.shiftKey);
+});
+$('time').addEventListener('click',e=>{const u=e.target.closest('.u');if(u){sel=+u.dataset.i;render()}});
+$('title').addEventListener('input',()=>{S.title=$('title').textContent;save()});
+$('title').addEventListener('blur',()=>{if(!$('title').textContent.trim()){S.title=DEF.title;$('title').textContent=S.title}save()});
+addEventListener('resize',render);
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{if(fsOn&&!document.fullscreenElement&&!document.webkitFullscreenElement){fsOn=false;render()}}));
+document.addEventListener('click',e=>{if(!e.target.closest('#menu,#menubtn'))tgMenu(false)});
+$('time').addEventListener('dblclick',e=>{
+  const u=e.target.closest('.u');if(!u||u.querySelector('.ed'))return;
+  const i=+u.dataset.i;sel=i;run=false;
+  const parts=split(curSec()),n=u.querySelector('.n');
+  const inp=document.createElement('input');inp.type='text';inp.inputMode='numeric';inp.className='ed';const tv=n.dataset.v||n.textContent;inp.value=tv;inp.style.width=Math.max(2,tv.length)+'ch';inp.setAttribute('aria-label','Type a value');
+  n.replaceWith(inp);inp.focus();inp.select();
+  let fin=false;
+  const commit=ok=>{if(fin)return;fin=true;if(ok){const v=parseInt(inp.value.replace(/\D/g,''),10);if(!isNaN(v)){let t=0;parts.forEach(p=>{t+=(p[0]===i?v:p[1])*[3600,60,1][p[0]]});S.total=Math.min(99999*3600,t);el=0;done=false;save()}}render()};
+  inp.addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();commit(true)}else if(ev.key==='Escape'){ev.stopPropagation();commit(false)}});
+  inp.addEventListener('blur',()=>commit(true));
+});
+let idle;
+function wake(){$('bar').classList.remove('hide');clearTimeout(idle);idle=setTimeout(()=>{if(run&&!panel)$('bar').classList.add('hide')},3500)}
+['mousemove','touchstart','keydown'].forEach(ev=>addEventListener(ev,wake));
+
+/* panels */
+function closePanel(){panel=null;$('ov').classList.remove('on')}
+$('ov').addEventListener('click',e=>{if(e.target.id==='ov')closePanel()});
+function set(k,v){S[k]=v;save();apply()}
+function sw(list,k){return list.map(c=>`<button style="background:${c}" onclick="set('${k}','${c}')" aria-label="${c}"></button>`).join('')+`<input type="color" value="${S[k]}" oninput="set('${k}',this.value)" aria-label="Custom colour">`}
+function openPanel(kind,keep){
+  panel=kind;$('ov').classList.add('on');
+  const pn=$('pn');const st=pn.scrollTop;
+  if(kind==='help'){
+    pn.innerHTML=`<button class="x" onclick="closePanel()">Close</button><h2>Keyboard help</h2>
+    ${ACTS.map(a=>`<div class="row"><span>${a[1]}</span><kbd>${kn(S.keys[a[0]])}</kbd></div>`).join('')}
+    <h3>Good to know</h3>
+    <p class="t">Use ← → to choose hours, minutes or seconds, then ↑ ↓ to change it. Hold Shift to change it 10 at a time. Hours have no limit.<br>
+    Click or tap the title to rename the event. Tap a number to select it, or double-click it and type a new value. Press Esc to leave full screen. On a keyboard-less iPhone or iPad, use the buttons at the bottom.<br>
+    Change any key in Settings. On Mac and iOS keyboards, Backspace also resets.<br>
+    On iOS, open this page in Safari, tap Share, then “Add to Home Screen” to run it like an app.</p>`;
+  }else{
+    pn.innerHTML=`<button class="x" onclick="closePanel()">Done</button><h2>Settings</h2>
+    <label for="si">Event title</label><input type="text" id="si" value="${S.title.replace(/"/g,'&quot;')}" oninput="set('title',this.value)">
+    <label>Show on timer</label><div class="sw">${[['h','Hours'],['m','Minutes'],['s','Seconds']].map(u=>`<label style="display:inline-flex;align-items:center;gap:6px;margin:0;color:#eee;font-size:14px"><input type="checkbox" ${S.units[u[0]]?'checked':''} onchange="setU('${u[0]}',this.checked)"> ${u[1]}</label>`).join('')}</div>
+    <label for="sv">Display style</label><select id="sv" onchange="set('view',this.value);openPanel('set',true)"><option value="digits" ${S.view==='digits'?'selected':''}>Timer (digits)</option><option value="clock" ${S.view==='clock'?'selected':''}>Analog clock</option><option value="watch" ${S.view==='watch'?'selected':''}>Digital watch</option></select>
+    ${S.view==='watch'?`<label for="ws">LED watch style</label><select id="ws" onchange="set('wstyle',this.value)">${WST.map(o=>`<option value="${o[0]}" ${S.wstyle===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select><label style="display:flex;align-items:center;gap:6px;color:#eee;font-size:14px"><input type="checkbox" ${S.wslant?'checked':''} onchange="set('wslant',this.checked)"> Slanted digits</label><label style="display:flex;align-items:center;gap:6px;color:#eee;font-size:14px"><input type="checkbox" ${S.wghost?'checked':''} onchange="set('wghost',this.checked)"> Show unlit segments</label>${rng('glow',0,100,'LED glow','%')}${rng('wgap',0,250,'Space between hours, minutes and seconds','%')}<label>LED panel background colour</label><div class="sw">${sw(LEDBGS,'ledbg')}<button style="width:auto;min-width:0;border-radius:8px;padding:0 10px;font-size:12px;background:#222" onclick="set('ledbg','');openPanel('set',true)">Default</button></div>`:''}
+    ${S.view==='clock'?`<label for="cs">Clock style</label><select id="cs" onchange="set('cstyle',this.value)">${CSTN.map(o=>`<option value="${o[0]}" ${S.cstyle===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>`:''}<select id="st" onchange="set('tpl',this.value)">${TPLS.map(t=>`<option value="${t[0]}" ${S.tpl===t[0]?'selected':''}>${t[1]}</option>`).join('')}</select>
+    <label for="sm">Direction</label><select id="sm" onchange="S.mode=this.value;run=false;el=0;done=false;save();apply()"><option value="down" ${S.mode==='down'?'selected':''}>Count down</option><option value="up" ${S.mode==='up'?'selected':''}>Count up</option></select>
+    
+    <h3>Timer style</h3>
+    <label for="sf">Font</label><select id="sf" onchange="set('font',this.value)">${fopts(S.font,false)}</select>
+    ${rng('size',20,300,'Size','%')}
+    <label>Colour</label><div class="sw">${sw(FGS,'fg')}</div>
+    <label>Shadow</label>${shSel('shadow')}${col('shadowC','Shadow colour')}
+    ${rng('stroke',0,10,'Outline thickness','px')}${col('strokeC','Outline colour')}
+    <h3>Event title style</h3>
+    <label for="tf">Font</label><select id="tf" onchange="set('tfont',this.value)">${fopts(S.tfont,true)}</select>
+    ${rng('tsize',40,400,'Size','%')}
+    <label>Colour</label><div class="sw">${sw(FGS,'tfg')}<button style="width:auto;min-width:0;border-radius:8px;padding:0 10px;font-size:12px;background:#222" onclick="set('tfg','');openPanel('set',true)">Same as timer</button></div>
+    <label style="display:flex;align-items:center;gap:6px;color:#eee;font-size:14px"><input type="checkbox" ${S.tbold?'checked':''} onchange="set('tbold',this.checked)"> Bold</label>
+    <label>Shadow</label>${shSel('tshadow')}${col('tshadowC','Shadow colour')}
+    ${rng('tstroke',0,10,'Outline thickness','px')}${col('tstrokeC','Outline colour')}
+    <h3>Logo above the title</h3>
+    <label style="display:flex;align-items:center;gap:6px;color:#eee;font-size:14px"><input type="checkbox" ${S.logoOn?'checked':''} onchange="S.logoOn=this.checked;save();apply()"> Show logo</label>
+    <label>Upload logo (PNG, JPG, SVG)</label><input type="file" accept="image/*" onchange="upLogo(this.files[0])" style="color:#ccc;font-size:13px">
+    ${rng('logoH',4,40,'Logo height','%')}
+    <p class="t">${S.logo?'A logo is loaded. ':'No logo yet. '}<button style="height:30px;font-size:12px" onclick="S.logo='';S.logoOn=false;save();apply();openPanel('set',true)">Remove logo</button></p>
+    <h3>Background</h3>
+    <label for="bt">Type</label><select id="bt" onchange="S.bgType=this.value;save();apply()"><option value="color" ${S.bgType==='color'?'selected':''}>Colour</option><option value="image" ${S.bgType==='image'?'selected':''}>Image</option><option value="video" ${S.bgType==='video'?'selected':''}>Video</option></select>
+    <label>Background colour</label><div class="sw">${sw(BGS,'bg')}</div>
+    <label>Background image</label><input type="file" accept="image/*" onchange="upBg(this.files[0])" style="color:#ccc;font-size:13px">
+    <label>Background video</label><input type="file" accept="video/*" onchange="upVideo(this.files[0])" style="color:#ccc;font-size:13px">
+    ${rng('dim',0,80,'Darken image or video','%')}
+    <p class="t">Image and video backgrounds stay on for as long as the app is open. When you close and reopen it, choose them again. Videos loop automatically.</p>
+    <h3>Fonts on this computer</h3>
+    <p class="t"><button onclick="loadLocal()">Load installed fonts</button></p>
+    <label for="cf">Or type an installed font name</label><div class="sw"><input type="text" id="cf" placeholder="e.g. Segoe UI" style="flex:1;height:40px;background:#222;color:#fff;border:1px solid #555;border-radius:8px;padding:0 10px;font:inherit"><button style="width:auto;min-width:60px;border-radius:8px;font-size:13px;background:#222" onclick="addFont($('cf').value)">Use</button></div>
+    <p class="t" id="fmsg"></p>
+    
+    <h3>Keyboard shortcuts</h3>
+    ${ACTS.map(a=>`<div class="row"><span>${a[1]}</span><button onclick="listen='${a[0]}';openPanel('set',true)">${listen===a[0]?'Press a key…':kn(S.keys[a[0]])}</button></div>`).join('')}
+    <p class="t"><button onclick="ACTS.forEach(a=>S.keys[a[0]]=a[2]);save();openPanel('set',true)">Restore default keys</button></p>`;
+  }
+  pn.scrollTop=keep?st:0;
+}
+apply();wake();
+</script>
+</body>
+</html>

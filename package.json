@@ -1,0 +1,41 @@
+{
+  "name": "digicre8-countdown-timer",
+  "productName": "DigiCre8 Countdown Timer",
+  "version": "1.0.0",
+  "description": "Professional event countdown timer",
+  "author": "DigiCre8 Studios",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "33.2.0",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.digicre8.countdowntimer",
+    "files": ["main.js", "index.html"],
+    "directories": { "buildResources": "build", "output": "dist" },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "portable", "arch": ["x64"] }]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "DigiCre8-Timer-Setup-${version}.${ext}"
+    },
+    "portable": { "artifactName": "DigiCre8-Timer-Portable-${version}.${ext}" },
+    "mac": {
+      "icon": "build/icon.png",
+      "category": "public.app-category.productivity",
+      "artifactName": "DigiCre8-Timer-Portable-${version}-${arch}.${ext}",
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] },
+        { "target": "zip", "arch": ["x64", "arm64"] }
+      ]
+    },
+    "dmg": { "artifactName": "DigiCre8-Timer-${version}-${arch}.${ext}" }
+  }
+}
